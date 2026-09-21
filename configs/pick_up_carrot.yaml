@@ -1,0 +1,36 @@
+task_name: "Pick up the carrot from the table."
+turn_budget: 10
+max_retries: 3
+total_trials: 1
+num_workers: 1
+output_dir: data/collect/pick_up_carrot
+stop_on_reward: false
+
+sim:
+  task: pick_up_carrot
+  motion_speed: 5
+  visualize: true
+  perception: sam3
+  camera_views: [frontview]
+  camera:
+    name: frontview
+    width: 512
+    height: 512
+  object_aliases:
+    carrot: carrot
+  randomize:
+    x_range: [-0.10, 0.10]
+    y_range: [-0.15, 0.10]
+    rotation: false        # _CARROT_FLAT_QUAT overrides the sampled quat anyway
+    colors: false
+    lighting: true
+    seed: null
+
+robot:
+  sam3_url: "http://127.0.0.1:8114"
+  sam3_debug: false
+  bbox_debug: false
+
+llm:
+  temperature: 1.0
+  max_tokens: 2048

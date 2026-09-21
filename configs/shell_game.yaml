@@ -1,0 +1,36 @@
+task_name: "One of the three cups hides a red cube. Lift each cup to find the hidden cube, then pick it up and lift it."
+turn_budget: 25
+max_retries: 3
+total_trials: 1
+num_workers: 1
+output_dir: data/collect/shell_game
+
+sim:
+  task: shell_game
+  motion_speed: 5
+  visualize: true
+  perception: sam3
+  grasp: pca
+  camera_views: [sideview]
+  camera:
+    name: sideview
+    width: 512
+    height: 512
+  object_aliases:
+    cup a: cup_a
+    cup b: cup_b
+    cup c: cup_c
+    red cube: cube
+  randomize:
+    colors: false
+    lighting: false
+    seed: null
+
+robot:
+  sam3_url: http://127.0.0.1:8114
+  sam3_debug: false
+  bbox_debug: false
+
+llm:
+  temperature: 1.0
+  max_tokens: 2048

@@ -1,0 +1,45 @@
+task_name: "Place the can inside the box."
+grasp: anygrasp
+turn_budget: 20
+max_retries: 3
+total_trials: 1
+num_workers: 1
+output_dir: data/collect/can_in_bin
+stop_on_reward: false
+
+sim:
+  task: can_in_bin
+  motion_speed: 1.0
+  visualize: true
+  perception: sam3
+  grasp: pca
+  camera_views: [frontview]
+  camera:
+    name: frontview
+    width: 512
+    height: 512
+  object_aliases:
+    can: can
+    box: bin_root
+  randomize:
+    x_range: [-0.17, 0.17]
+    y_range: [-0.3, -0.15]    
+    rotation: true
+    colors: false
+    lighting: true
+    seed: null
+  
+bin_randomize:                              
+  bin_x_range: [-0.15, 0.15]            
+  bin_y_range: [0.08, 0.25]
+
+
+robot:
+  sam3_url: "http://127.0.0.1:8114"
+  sam3_debug: false
+  bbox_debug: false
+
+
+llm:
+  temperature: 1.0
+  max_tokens: 2048

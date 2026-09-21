@@ -1,0 +1,42 @@
+task_name: "Place the tomato near the potato."
+turn_budget: 20
+max_retries: 3
+total_trials: 1
+num_workers: 1
+output_dir: data/collect/tomato_near_potato
+
+sim:
+  task: tomato_near_potato
+  motion_speed: 0.5
+  visualize: true
+  perception: sam3
+  camera_views: [frontview]
+  camera:
+    name: frontview
+    width: 512
+    height: 512
+  object_aliases:
+    tomato: tomato
+    potato: potato
+  randomize:
+    colors: false
+    lighting: true
+    seed: null
+
+potato_randomize:
+  x_range: [-0.15, 0.15]
+  y_range: [-0.25, -0.10]
+  rotation: true
+
+tomato_randomize:
+  x_range: [-0.12, 0.12]
+  y_range: [0.08, 0.20]
+
+robot:
+  sam3_url: "http://127.0.0.1:8114"
+  sam3_debug: false
+  bbox_debug: false
+
+llm:
+  temperature: 1.0
+  max_tokens: 2048

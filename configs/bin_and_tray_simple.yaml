@@ -1,0 +1,49 @@
+task_name: "Place the fork onto the tray and the banana into the bin."
+turn_budget: 20
+max_retries: 3
+total_trials: 1
+num_workers: 1
+output_dir: data/collect/bin_and_tray_simple
+stop_on_reward: false
+
+sim:
+  task: bin_and_tray_simple
+  motion_speed: 5
+  visualize: true
+  perception: sam3
+  grasp: pca
+  camera_views: [frontview]
+  camera:
+    name: frontview
+    width: 512
+    height: 512
+  object_aliases:
+    fork: fork
+    banana: banana
+    tray: tray
+    bin: bin
+  randomize:
+    colors: false
+    lighting: false
+    seed: null
+
+fork_randomize:
+  x_range: [-0.25, 0.25]
+  y_range: [-0.25, -0.05]
+
+banana_randomize:
+  x_range: [-0.25, 0.25]
+  y_range: [-0.25, -0.05]
+
+robot:
+  sam3_url: http://127.0.0.1:8114
+  sam3_debug: false
+  bbox_debug: false
+  # graspgen_url: "tcp://127.0.0.1:5556"
+  # graspgen_debug: true
+  # graspgen_horizontal: false
+  # graspgen_vertical: true
+
+llm:
+  temperature: 1.0
+  max_tokens: 2048

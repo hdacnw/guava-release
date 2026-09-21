@@ -1,0 +1,42 @@
+task_name: "Arrange the apple and the juice bottle from right to left by increasing size."
+turn_budget: 25
+max_retries: 3
+total_trials: 1
+num_workers: 1
+output_dir: data/collect/apple_juice_reverse_order
+
+sim:
+  task: apple_juice_reverse_order
+  motion_speed: 0.5
+  visualize: true
+  perception: sam3
+  grasp: pca
+  camera_views: [frontview]
+  camera:
+    name: frontview
+    width: 512
+    height: 512
+  object_aliases:
+    apple: apple
+    juice bottle: juice
+  randomize:
+    colors: false
+    lighting: true
+    seed: null
+
+apple_randomize:
+  x_range: [-0.22, 0.05]
+  y_range: [-0.2, 0.05]
+
+juice_randomize:
+  x_range: [0.0, 0.2]
+  y_range: [0.0, 0.15]
+
+robot:
+  sam3_url: http://127.0.0.1:8114
+  sam3_debug: false
+  bbox_debug: false
+
+llm:
+  temperature: 1.0
+  max_tokens: 2048

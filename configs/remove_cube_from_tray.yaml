@@ -1,0 +1,39 @@
+task_name: "Remove the red cube from the tray and place it on the table."
+turn_budget: 10
+max_retries: 3
+total_trials: 1
+num_workers: 1
+output_dir: data/collect/remove_cube_from_tray
+stop_on_reward: false
+
+sim:
+  task: remove_cube_from_tray
+  motion_speed: 5
+  visualize: true
+  perception: sam3
+  grasp: pca
+  camera_views: [frontview]
+  camera:
+    name: frontview
+    width: 512
+    height: 512
+  object_aliases:
+    red cube: cube
+    tray: tray
+  randomize:
+    colors: false
+    lighting: false
+    seed: null
+
+tray_randomize:
+  x_range: [-0.15, 0.15]
+  y_range: [0.05, 0.20]
+
+robot:
+  sam3_url: http://127.0.0.1:8114
+  sam3_debug: false
+  bbox_debug: false
+
+llm:
+  temperature: 1.0
+  max_tokens: 2048

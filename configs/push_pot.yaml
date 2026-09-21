@@ -1,0 +1,40 @@
+task_name: "Push the pot."
+turn_budget: 20
+max_retries: 3
+total_trials: 1
+num_workers: 1
+output_dir: data/collect/push_pot
+
+push_directions:
+  - right
+
+sim:
+  task: push_pot
+  motion_speed: 1.0
+  visualize: true
+  perception: sam3
+  camera_views: [frontview]
+  camera:
+    name: frontview
+    width: 512
+    height: 512
+  object_aliases:
+    pot: pot
+  randomize:
+    colors: false
+    lighting: true
+    seed: null
+
+pot_randomize:
+  x_range: [0.0, 0.15]
+  y_range: [-0.05, 0.10]
+  rotation: true
+
+robot:
+  sam3_url: "http://127.0.0.1:8114"
+  sam3_debug: false
+  bbox_debug: false
+
+llm:
+  temperature: 1.0
+  max_tokens: 2048
