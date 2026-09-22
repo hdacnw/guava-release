@@ -732,6 +732,7 @@ dependencies = [
 
 [package.dev-dependencies]
 eval = [
+    { name = "fastapi", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "gymnasium", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "h5py", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "huggingface-hub", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
@@ -748,6 +749,7 @@ eval = [
     { name = "robosuite", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "scipy", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
     { name = "setuptools", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
+    { name = "uvicorn", extra = ["standard"], marker = "(platform_machine == 'x86_64' and sys_platform == 'linux' and extra == 'group-5-guava-eval') or (platform_machine != 'x86_64' and extra == 'group-5-guava-eval' and extra == 'group-5-guava-sam3') or (platform_machine != 'x86_64' and extra == 'group-5-guava-eval' and extra == 'group-5-guava-serve') or (platform_machine != 'x86_64' and extra == 'group-5-guava-sam3' and extra == 'group-5-guava-serve') or (sys_platform != 'linux' and extra == 'group-5-guava-eval' and extra == 'group-5-guava-sam3') or (sys_platform != 'linux' and extra == 'group-5-guava-eval' and extra == 'group-5-guava-serve') or (sys_platform != 'linux' and extra == 'group-5-guava-sam3' and extra == 'group-5-guava-serve') or (extra != 'group-5-guava-eval' and extra == 'group-5-guava-sam3' and extra == 'group-5-guava-serve')" },
     { name = "viser", marker = "platform_machine == 'x86_64' and sys_platform == 'linux'" },
 ]
 sam3 = [
@@ -782,6 +784,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 eval = [
+    { name = "fastapi" },
     { name = "gymnasium", specifier = ">=1.2.3" },
     { name = "h5py", specifier = ">=3.16.0" },
     { name = "huggingface-hub", specifier = ">=1.11.0" },
@@ -798,6 +801,7 @@ eval = [
     { name = "robosuite", editable = "third_party/robosuite" },
     { name = "scipy", specifier = ">=1.12" },
     { name = "setuptools" },
+    { name = "uvicorn", extras = ["standard"] },
     { name = "viser", specifier = ">=0.2.0" },
 ]
 sam3 = [

@@ -1,0 +1,52 @@
+task_name: "Set the table by placing the bowl on the plate and the spoon next to the plate."
+turn_budget: 25
+max_retries: 3
+total_trials: 1
+num_workers: 1
+output_dir: data/collect/set_table
+
+sim:
+  task: set_table
+  motion_speed: 0.5
+  visualize: false
+  perception: sam3
+  grasp: pca
+  camera_views: [frontview, agentview, backview]
+  camera:
+    width: 512
+    height: 512
+  object_aliases:
+    bowl: bowl
+    plate: plate
+    spoon: spoon
+  randomize:
+    colors: false
+    lighting: true
+    seed: null
+
+plate_randomize:
+  x_range: [-0.10, 0.10]
+  y_range: [0.05, 0.20]
+
+bowl_randomize:
+  x_range: [-0.20, 0.20]
+  y_range: [-0.20, -0.05]
+
+spoon_randomize:
+  x_range: [-0.25, 0.25]
+  y_range: [-0.20, -0.15]
+
+robot:
+  sam3_url: http://127.0.0.1:8114
+  sam3_debug: true
+  bbox_debug: false
+  graspgen_url: "tcp://127.0.0.1:5556"
+  graspgen_debug: true
+  graspgen_horizontal: false
+  graspgen_vertical: true              # favour top-down grasps — needed for flat objects like the spoon
+  graspgen_collision_threshold: 0.005  # 5 mm — reject grasps whose fingers come closer than this to the scene
+
+llm:
+  base_url: http://127.0.0.1:8110/v1
+  temperature: 1.0
+  max_tokens: 2048

@@ -1,0 +1,72 @@
+# Training-side dependencies for `.venv-train`.
+#
+# Why this file exists
+# --------------------
+# The release repository intentionally keeps simulator, SAM3, serving, and
+# training environments separate because their Torch / CUDA requirements
+# differ. This file defines the standalone `.venv-train` environment used by
+# both SFT and online GRPO.
+#
+# The training stack (ms-swift + deepspeed + flash-attn + liger-kernel + vllm)
+# needs **torch 2.11+**, and ships precompiled wheels that link against the
+# 2.11 ABI. Resolving `--extra training` under the 2.9.1 pin would either
+# fail or rebuild flash-attn against the wrong torch and break at import.
+#
+# So we keep `.venv-train` separate from `uv sync` and use this requirements
+# file to pin the training stack to versions known to work together.
+#
+# Versions below are the tested stack used for Guava Qwen3.5-4B SFT and GRPO.
+#
+# Setup
+# -----
+#     uv venv .venv-train --python 3.11
+#     # torch first, alone, so the CUDA wheel index is honoured
+#     uv pip install --python .venv-train torch==2.11.0
+#     # the rest. --no-build-isolation needed by flash-attn so it sees the
+#     # already-installed torch (otherwise it grabs a different torch into
+#     # the build env and the resulting .so links against wrong libtorch).
+#     uv pip install --python .venv-train --no-build-isolation -r requirements-train.txt
+#
+# Run a smoke check after install:
+#     .venv-train/bin/python -c "import torch, transformers, swift, deepspeed, flash_attn, vllm; print('ok')"
+
+# ── Torch (must be installed FIRST, alone) ─────────────────────────────────
+torch==2.11.0
+
+# ── Core training stack ────────────────────────────────────────────────────
+# ms-swift 4.2.1 + transformers 5.8.x is the OFFICIAL tested pairing for
+# Qwen3.5-VL. Bug history:
+#   * 4.2.0 ships a broken Qwen3.5-VL template that crashes hf_server /
+#     TransformersEngine inference with
+#       AttributeError: 'Qwen3_5...' has no attribute 'get_rope_idx'
+#   * 4.2.1 patched the template but is still pinned against the
+#     transformers 5.8.x API surface. Bumping transformers to 5.9+ breaks
+#     ms-swift's chat-template / processor wiring — don't do it.
+# Pin both together; if you upgrade one, upgrade the other in lockstep
+# (see ms-swift release notes for the corresponding transformers version).
+ms-swift==4.2.1
+transformers==5.8.1
+accelerate==1.13.0
+peft==0.19.1
+trl==0.29.1
+deepspeed==0.19.0
+httpx==0.28.1
+
+# ── Perf kernels ───────────────────────────────────────────────────────────
+# liger-kernel needs torch already installed.
+liger-kernel==0.8.0
+# flash-attn needs nvcc + --no-build-isolation. Builds against the
+# already-installed torch (above). ~25 min on first install.
+flash-attn==2.8.3
+# ninja: vLLM's EngineCore subprocess shells out to the `ninja` CLI for
+# torch.compile / CUDA kernel builds. Without it, GRPO rollouts hard-fail
+# with EngineDeadError.
+ninja==1.13.0
+
+# ── Online RL inference (for GRPO rollouts) ────────────────────────────────
+# vLLM 0.21 has matching wheels for torch 2.11. Mismatched torch ABI shows
+# up as "undefined symbol: ..." at import.
+vllm==0.21.0
+
+# ── Logging ────────────────────────────────────────────────────────────────
+wandb==0.27.0

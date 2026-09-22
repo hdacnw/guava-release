@@ -51,6 +51,48 @@ editing dependencies, run `uv lock` and commit both configuration and lockfile.
 Fine-tuning frameworks and the optional GraspGen server are separate installations,
 not part of these three runtime groups.
 
+## Train Guava models
+
+Training uses a fourth, isolated environment because ms-swift, DeepSpeed, vLLM,
+and FlashAttention require a different Torch stack:
+
+```bash
+uv venv .venv-train --python 3.11
+uv pip install --python .venv-train torch==2.11.0
+uv pip install --python .venv-train --no-build-isolation -r requirements-train.txt
+```
+
+Run full-parameter SFT on a local JSONL file or a dataset supported by
+ms-swift:
+
+```bash
+DATASET=/absolute/path/to/training.jsonl \
+MODEL_PATH=Qwen/Qwen3.5-4B \
+OUTPUT_DIR=runs/guava-sft \
+./scripts/run_sft_full.sh
+```
+
+The default SFT configuration uses eight visible GPUs, global batch size 32
+(`2 × 8 × gradient accumulation 2`), image-token limit 512, ZeRO-3, and saves
+every 25 optimizer steps. All values can be overridden through environment
+variables documented at the top of the script.
+
+Online GRPO launches SAM3, multiple simulator workers, a vLLM rollout server,
+and a six-GPU full-parameter trainer. Its released examples are Shell Game,
+Set Table, and Red Objects in Basket:
+
+```bash
+CHECKPOINT=/absolute/path/to/sft-checkpoint \
+NUM_GENERATIONS=8 MAX_STEPS=50 SAVE_STEPS=25 \
+./scripts/run_grpo_full.sh
+```
+
+Successful trajectories receive binary task-owned reward. Successes longer
+than 16 turns receive a `0.025` per-turn length penalty capped at `0.10`;
+failures remain at zero. Override these values with
+`GUAVA_LENGTH_PENALTY_FREE_TURNS`, `GUAVA_LENGTH_PENALTY_PER_TURN`, and
+`GUAVA_LENGTH_PENALTY_MAX`.
+
 ## Quick start: evaluate a model
 
 Hosted models use **OpenRouter by default**. Set `OPENROUTER_API_KEY` in your shell environment.
