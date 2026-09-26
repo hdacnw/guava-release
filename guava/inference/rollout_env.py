@@ -109,13 +109,9 @@ def _get_image_transport() -> str:
     return transport
 
 
-_INLINE_IMG_SIZE = int(os.environ.get("GUAVA_INLINE_IMAGE_SIZE", "256"))
-
-
 def _to_data_url(rgb: np.ndarray) -> str:
+    """Encode the original image without resizing (also used by evaluation)."""
     img = Image.fromarray(rgb)
-    if _INLINE_IMG_SIZE > 0 and max(img.size) > _INLINE_IMG_SIZE:
-        img = img.resize((_INLINE_IMG_SIZE, _INLINE_IMG_SIZE), Image.Resampling.LANCZOS)
     buf = io.BytesIO()
     img.save(buf, format="PNG")
     return f"data:image/png;base64,{base64.b64encode(buf.getvalue()).decode()}"
@@ -125,6 +121,13 @@ def _image_message_url(rgb: np.ndarray, saved_path: Path) -> str:
     """Use a short local path for training, or an inline image for remote APIs."""
     if _get_image_transport() == "file":
         return str(saved_path.resolve())
+    # Only the training launcher opts into smaller inline rollout images.
+    # Keep the shared evaluation encoder independent of training settings.
+    max_size = int(os.environ.get("GUAVA_TRAINING_INLINE_IMAGE_SIZE", "0"))
+    if max_size > 0:
+        img = Image.fromarray(rgb)
+        img.thumbnail((max_size, max_size), Image.Resampling.LANCZOS)
+        rgb = np.asarray(img)
     return _to_data_url(rgb)
 
 

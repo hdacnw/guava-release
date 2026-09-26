@@ -101,6 +101,9 @@ export MUJOCO_GL=${MUJOCO_GL:-egl}
 # Match the public v13b short SFT prompt.
 export GUAVA_SYSTEM_PROMPT=${GUAVA_SYSTEM_PROMPT:-sft_v13b_short}
 export IMAGE_MAX_TOKEN_NUM=${IMAGE_MAX_TOKEN_NUM:-512}
+# Limit inline training observations only; evaluation always encodes full size.
+# File transport uses the saved original image and is unaffected by this limit.
+export GUAVA_TRAINING_INLINE_IMAGE_SIZE=${GUAVA_TRAINING_INLINE_IMAGE_SIZE:-512}
 export GUAVA_LENGTH_PENALTY_FREE_TURNS=${GUAVA_LENGTH_PENALTY_FREE_TURNS:-16}
 export GUAVA_LENGTH_PENALTY_PER_TURN=${GUAVA_LENGTH_PENALTY_PER_TURN:-0.025}
 export GUAVA_LENGTH_PENALTY_MAX=${GUAVA_LENGTH_PENALTY_MAX:-0.10}
