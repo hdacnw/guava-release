@@ -1,5 +1,7 @@
 # Guava
 
+[Project website](https://guava-harness.github.io/)
+
 Guava is a harness and model distillation framework for agentic manipulation. It supports agent-controlled robot manipulation in simulation, a 15-task benchmark, and data collection in MuJoCo for opensource model fine-tuning.
 
 ## Installation
