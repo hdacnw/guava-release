@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="https://guava-harness.github.io/images/red-guavas.png" alt="Guava logo" width="80">
+  <img src="assets/images/red-guavas.png" alt="Guava logo" width="80">
   <h1>Guava</h1>
   <p><strong>An Effective and Universal Harness for Embodied Manipulation</strong></p>
   <p>
@@ -21,11 +21,24 @@ collection for fine-tuning open-source models.
 | 🧪 **Collect** | Generate trajectories, introduce perturbations, and collect recovery branches. |
 | 🧠 **Train** | Distill tool-use behavior with supervised fine-tuning and improve policies with GRPO. |
 
-[![Guava overview: perception, reasoning, and action for embodied manipulation.](https://guava-harness.github.io/images/teaser.png)](https://guava-harness.github.io/)
+[![Guava overview: perception, reasoning, and action for embodied manipulation.](assets/images/teaser.png)](assets/videos/guava_overview.mp4)
 
-**Explore the [🌐 project page](https://guava-harness.github.io/) for videos, results, and real-world demonstrations.**
+**[▶️ Watch the overview](assets/videos/guava_overview.mp4)** · **[🌐 Explore the project page](https://guava-harness.github.io/)**
 
-**Jump to:** [📦 Installation](#installation) · [🚀 Quick start](#quick-start) · [📊 Benchmark](#benchmark) · [🧪 Data collection](#data-collection) · [🧠 Training](#training) · [⚙️ Configuration](#configuration) · [🎬 Videos](#videos) · [🦾 Real world](#real-world) · [📚 Citation](#citation)
+**Jump to:** [🎥 Demos](#demos) · [📦 Installation](#installation) · [🚀 Quick start](#quick-start) · [📊 Benchmark](#benchmark) · [🧪 Data collection](#data-collection) · [🧠 Training](#training) · [⚙️ Configuration](#configuration) · [🎬 Videos](#videos) · [🦾 Real world](#real-world) · [📚 Citation](#citation)
+
+<a id="demos"></a>
+
+## 🎥 Demos
+
+| 🧪 Simulation | 🦾 Real-world manipulation | 🔄 Failure recovery |
+| :---: | :---: | :---: |
+| [![A simulated robot places a can in a box.](assets/previews/can_in_bin_sim.gif)](assets/videos/can_in_bin_sim.mp4) | [![A real robot sets the table with a bowl and spoon.](assets/previews/set_table.gif)](assets/videos/set_table.mp4) | [![Guava retries a grasp after the carrot is moved.](assets/previews/recovery_move.gif)](assets/videos/recovery_move.mp4) |
+| [▶️ Place the can in the box](assets/videos/can_in_bin_sim.mp4) | [▶️ Set the table](assets/videos/set_table.mp4) | [▶️ Recover from a moved object](assets/videos/recovery_move.mp4) |
+
+Select a preview to open the full MP4 video. The previews retain the source clips'
+playback speed at a reduced resolution and frame rate.
+See [media sources](assets/README.md) for the original project-page assets.
 
 <a id="installation"></a>
 
@@ -191,6 +204,8 @@ and episode results.
 
 ## 🧪 Data collection
 
+![Guava data engine: simulation scenes and a frontier VLM produce reasoning and tool-call trajectories.](assets/images/data_engine.png)
+
 ### 1. Start perception
 
 Run SAM3 in a separate terminal:
@@ -304,6 +319,15 @@ failures remain at zero. Override these values with
 `GUAVA_LENGTH_PENALTY_FREE_TURNS`, `GUAVA_LENGTH_PENALTY_PER_TURN`, and
 `GUAVA_LENGTH_PENALTY_MAX`.
 
+<details>
+<summary>📈 SFT and RL results from the paper</summary>
+
+<p align="center">
+  <img src="assets/images/sft_vs_rl.png" alt="SFT and RL success rates on long-horizon manipulation tasks." width="640">
+</p>
+
+</details>
+
 <a id="configuration"></a>
 
 ## ⚙️ Prompts and configuration
@@ -358,6 +382,8 @@ For YAML-driven collection, set top-level `record_video: true` and `video_fps: 2
 See the [project page](https://guava-harness.github.io/#results) for real-world
 demonstrations. Physical-robot operation code is not included in this repository;
 deployment requires an implementation adapted to your own robot setup.
+
+![Real-world evaluation from the paper: success rates on in-distribution and out-of-distribution tasks.](assets/images/real_world_comparison.png)
 
 <a id="citation"></a>
 
