@@ -1,101 +1,106 @@
-# Guava
+<div align="center">
+  <img src="https://guava-harness.github.io/images/red-guavas.png" alt="Guava logo" width="80">
+  <h1>Guava</h1>
+  <p><strong>An Effective and Universal Harness for Embodied Manipulation</strong></p>
+  <p>
+    <a href="https://guava-harness.github.io/">🌐 Project Page</a>
+    &nbsp; · &nbsp;
+    <a href="https://arxiv.org/abs/2606.18363">📄 Paper</a>
+    &nbsp; · &nbsp;
+    <a href="https://huggingface.co/AIcell/guava-v13b-qwen3.5-4b">🤗 Guava Model</a>
+  </p>
+</div>
 
-[Project website](https://guava-harness.github.io/)
+Guava is a harness and model distillation framework for agentic manipulation.
+It brings together robot simulation, a **15-task benchmark**, and MuJoCo data
+collection for fine-tuning open-source models.
 
-Guava is a harness and model distillation framework for agentic manipulation. It supports agent-controlled robot manipulation in simulation, a 15-task benchmark, and data collection in MuJoCo for opensource model fine-tuning.
+| | What you can do |
+| --- | --- |
+| 🦾 **Evaluate** | Run hosted VLMs, local Qwen models, or Guava checkpoints on manipulation tasks. |
+| 🧪 **Collect** | Generate trajectories, introduce perturbations, and collect recovery branches. |
+| 🧠 **Train** | Distill tool-use behavior with supervised fine-tuning and improve policies with GRPO. |
 
-## Installation
+[![Guava overview: perception, reasoning, and action for embodied manipulation.](https://guava-harness.github.io/images/teaser.png)](https://guava-harness.github.io/)
 
-Require CUDA-capable GPU. Development and validation have used Ubuntu with Python 3.11 and an RTX 5090; other hardware may require different serving settings.
+**Explore the [🌐 project page](https://guava-harness.github.io/) for videos, results, and real-world demonstrations.**
 
-1. Install Git and `uv`, and obtain access to SAM3 weights [https://huggingface.co/facebook/sam3](SAM3)   using your own Hugging Face account.
-2. Clone the repository and initialize the required submodules:
-  ```bash
-   git clone --branch pre-release https://github.com/hdacnw/guava-release.git
-   cd guava-release
-   git submodule update --init third_party/robosuite third_party/sam3
-   python3 scripts/setup_sam3_compat.py
-   python3 scripts/setup_sam3_compat.py --check
-  ```
+**Jump to:** [📦 Installation](#installation) · [🚀 Quick start](#quick-start) · [📊 Benchmark](#benchmark) · [🧪 Data collection](#data-collection) · [🧠 Training](#training) · [⚙️ Configuration](#configuration) · [🎬 Videos](#videos) · [🦾 Real world](#real-world) · [📚 Citation](#citation)
 
-   
-3. Sync the simulator and perception groups into separate environments:
-  ```bash
-   UV_PROJECT_ENVIRONMENT=.venv-eval uv sync --locked --no-default-groups --group eval
-  
-   UV_PROJECT_ENVIRONMENT=.venv-sam3 uv sync --locked --no-default-groups --group sam3
-   export MUJOCO_GL=egl
-  ```
-4. For local Qwen or Guava checkpoints, also create the serving environment:
-  ```bash
-   UV_PROJECT_ENVIRONMENT=.venv-serve uv sync --locked --no-default-groups --group serve
-  ```
+<a id="installation"></a>
 
-Dependencies are declared once in `pyproject.toml` and resolved in `uv.lock`
-(validated with uv 0.11.24).
-The `eval` group includes simulation, hosted-model clients, collection, and data
-preparation; `sam3` provides perception; `serve` provides local vLLM inference.
-These groups are mutually exclusive: SAM3 and vLLM require different Torch
-versions. Do not use `--all-groups` or sync multiple groups into one environment.
-The lockfile targets Linux x86-64 and Python 3.11. CUDA wheel sources are configured
-in `pyproject.toml`; no extra package-index flags are needed. Local serving also
-requires a host C++ compiler (for example, Ubuntu's `build-essential` package).
-The serving group includes matching CUDA compiler/headers and Ninja for JIT builds.
-The managed evaluation launcher also creates missing CUDA linker symlinks inside
-the serving environment for FlashInfer. A caller-supplied `CUDA_HOME` is left
-untouched and must point to a complete compatible toolkit.
+## 📦 Installation
 
-Use the explicit environment paths above: a bare `uv sync` defaults to the `eval`
-group in `.venv`, which may replace packages in an existing `.venv`. Likewise,
-syncing an existing environment removes packages not needed by its selected group.
-Use a fresh environment path if you need to preserve a previous setup. After
-editing dependencies, run `uv lock` and commit both configuration and lockfile.
-Fine-tuning frameworks and the optional GraspGen server are separate installations,
-not part of these three runtime groups.
+### 1. Check prerequisites
 
-## Train Guava models
+- **Platform:** Linux x86-64 and Python 3.11.
+- **Hardware:** a CUDA-capable GPU. Development and validation used Ubuntu with an RTX 5090; other hardware may need different serving settings.
+- **Tools:** Git and `uv` (validated with uv 0.11.24).
+- **Perception weights:** obtain access to [SAM3 on Hugging Face](https://huggingface.co/facebook/sam3) using your own account.
 
-Training uses a fourth, isolated environment because ms-swift, DeepSpeed, vLLM,
-and FlashAttention require a different Torch stack:
+### 2. Clone and initialize
 
 ```bash
-uv venv .venv-train --python 3.11
-uv pip install --python .venv-train torch==2.11.0
-uv pip install --python .venv-train --no-build-isolation -r requirements-train.txt
+git clone --branch main https://github.com/hdacnw/guava-release.git
+cd guava-release
+git submodule update --init third_party/robosuite third_party/sam3
+python3 scripts/setup_sam3_compat.py
+python3 scripts/setup_sam3_compat.py --check
 ```
 
-Run full-parameter SFT on a local JSONL file or a dataset supported by
-ms-swift:
+### 3. Create the runtime environments
+
+| Environment | Dependency group | Purpose |
+| --- | --- | --- |
+| `.venv-eval` | `eval` | Simulation, hosted-model clients, collection, and data preparation |
+| `.venv-sam3` | `sam3` | SAM3 perception |
+| `.venv-serve` | `serve` | Local vLLM inference; needed for local Qwen or Guava checkpoints |
+
+Create the evaluation and perception environments:
 
 ```bash
-DATASET=/absolute/path/to/training.jsonl \
-MODEL_PATH=Qwen/Qwen3.5-4B \
-OUTPUT_DIR=runs/guava-sft \
-./scripts/run_sft_full.sh
+UV_PROJECT_ENVIRONMENT=.venv-eval uv sync --locked --no-default-groups --group eval
+UV_PROJECT_ENVIRONMENT=.venv-sam3 uv sync --locked --no-default-groups --group sam3
+export MUJOCO_GL=egl
 ```
 
-The default SFT configuration uses eight visible GPUs, global batch size 32
-(`2 × 8 × gradient accumulation 2`), image-token limit 512, ZeRO-3, and saves
-every 25 optimizer steps. All values can be overridden through environment
-variables documented at the top of the script.
-
-Online GRPO launches SAM3, multiple simulator workers, a vLLM rollout server,
-and a six-GPU full-parameter trainer. Its released examples are Shell Game,
-Set Table, and Red Objects in Basket:
+For **local models**, also create the serving environment:
 
 ```bash
-CHECKPOINT=/absolute/path/to/sft-checkpoint \
-NUM_GENERATIONS=8 MAX_STEPS=50 SAVE_STEPS=25 \
-./scripts/run_grpo_full.sh
+UV_PROJECT_ENVIRONMENT=.venv-serve uv sync --locked --no-default-groups --group serve
 ```
 
-Successful trajectories receive binary task-owned reward. Successes longer
-than 16 turns receive a `0.025` per-turn length penalty capped at `0.10`;
-failures remain at zero. Override these values with
-`GUAVA_LENGTH_PENALTY_FREE_TURNS`, `GUAVA_LENGTH_PENALTY_PER_TURN`, and
-`GUAVA_LENGTH_PENALTY_MAX`.
+> [!IMPORTANT]
+> Keep these environments separate: SAM3 and vLLM require different Torch versions.
+> Do not use `--all-groups` or sync multiple groups into one environment.
+> Use the explicit environment paths above; a bare `uv sync` targets `.venv`.
 
-## Quick start: evaluate a model
+<details>
+<summary>🔧 Dependency, CUDA, and environment details</summary>
+
+Dependencies are declared in [pyproject.toml](pyproject.toml) and resolved in
+[uv.lock](uv.lock). The lockfile targets Linux x86-64 and Python 3.11.
+CUDA wheel sources are already configured; no extra package-index flags are needed.
+
+Local serving requires a host C++ compiler, such as Ubuntu's `build-essential`
+package. The serving group includes matching CUDA compiler/headers and Ninja
+for JIT builds. The managed evaluation launcher also creates missing CUDA linker
+symlinks inside the serving environment for FlashInfer. A caller-supplied
+`CUDA_HOME` is left untouched and must point to a complete compatible toolkit.
+
+A bare `uv sync` defaults to the `eval` group in `.venv`. Syncing an existing
+environment removes packages not needed by its selected group, so use a fresh
+path if you need to preserve a previous setup. After editing dependencies,
+run `uv lock` and commit both configuration and lockfile.
+
+Fine-tuning uses a [fourth environment](#training). The optional GraspGen server
+is also a separate installation.
+
+</details>
+
+<a id="quick-start"></a>
+
+## 🚀 Quick start: evaluate a model
 
 Hosted models use **OpenRouter by default**. Set `OPENROUTER_API_KEY` in your shell environment.
 
@@ -111,11 +116,10 @@ Remove `--dry-run` to execute. The launcher manages SAM3 automatically and also
 starts vLLM when a local model is selected. Keep ports 8000 and 8114 available,
 or use `--external-servers` with exactly one model to use your own services.
 
-### Choose a model or provider
+### 🔌 Choose a model or provider
 
 Use the exact model ID from your provider or Hugging Face model card—no
 Guava-specific model aliases are required.
-
 
 | Provider             | Example selection                                        |
 | -------------------- | -------------------------------------------------------- |
@@ -124,12 +128,10 @@ Guava-specific model aliases are required.
 | Local Qwen           | `--provider local --models Qwen/Qwen3.5-4B`              |
 | Local Guava          | `--provider local --models AIcell/guava-v13b-qwen3.5-4b` |
 
-
 For another hosted VLM, pass its provider model ID directly to `--models`.
 Set `OPENROUTER_API_KEY` for OpenRouter or `OPENAI_API_KEY` for direct OpenAI.
 
-
-Evaluate your own full checkpoint:
+### 🤗 Evaluate your own checkpoint
 
 ```bash
 .venv-eval/bin/python -m guava.inference.run_study \
@@ -142,9 +144,12 @@ The listed Qwen/Guava checkpoints have pinned revisions. Other Hugging Face mode
 require `--revision COMMIT`, with one model per invocation when overriding a
 revision.
 
-Use `--prompt-profile sft` for short SFT prompt, or `--prompt-profile long` to explicitly select the long data generation prompt.
+Use `--prompt-profile sft` for the short SFT prompt, or `--prompt-profile long`
+for the long data generation prompt.
 
-## Run the benchmark
+<a id="benchmark"></a>
+
+## 📊 Run the benchmark
 
 ```bash
 .venv-eval/bin/python -m guava.inference.run_study \
@@ -155,7 +160,6 @@ Use `--prompt-profile sft` for short SFT prompt, or `--prompt-profile long` to e
 Without `--tasks`, all 15 tasks run. With no model/provider flags, the default is
 `openai/gpt-5.4` through OpenRouter. Choose a new output directory under
 `runs/` or `data/`.
-
 
 | Task ID                     | Task                                                             | Default turn cap |
 | --------------------------- | ---------------------------------------------------------------- | ----------------: |
@@ -175,19 +179,29 @@ Without `--tasks`, all 15 tasks run. With no model/provider flags, the default i
 | `shell_game`                | Retrieve and lift the hidden cube                                | 30               |
 | `red_objects_in_basket`     | Place all red objects in the basket                              | 30               |
 
+**Configuration:** `--max-turns N` overrides both action and decision caps.
+The default protocol uses full tool access, PCA grasping, motion speed 1, and
+20 initial settling steps, adjustable through the per-task YAML files in
+[configs/](configs/). Shell Game uses `sideview`; other tasks use `frontview`.
 
-`--max-turns N` overrides both action and decision caps. The default protocol uses full tool access, PCA grasping, motion speed 1, and 20 initial settling steps, all adjustable via per task `.yaml` configs. Shell game uses `sideview`; other tasks use `frontview`. Outputs include manifests, prompts, responses,
-action logs, images, parser audits, and episode results.
+**Outputs:** manifests, prompts, responses, action logs, images, parser audits,
+and episode results.
 
-## Data Collection
+<a id="data-collection"></a>
 
-Start SAM3 in a separate terminal:
+## 🧪 Data collection
+
+### 1. Start perception
+
+Run SAM3 in a separate terminal:
 
 ```bash
 .venv-sam3/bin/python -m guava.scripts.sam3_server --port 8114 --device cuda
 ```
 
-With `OPENROUTER_API_KEY` set, collect a single base trajectory:
+### 2. Collect a base trajectory
+
+With `OPENROUTER_API_KEY` set:
 
 ```bash
 .venv-eval/bin/python -m guava.scripts.collect_release \
@@ -195,8 +209,11 @@ With `OPENROUTER_API_KEY` set, collect a single base trajectory:
   --output data/collect/can_in_bin
 ```
 
-Use `--model PROVIDER_MODEL_ID` to select another model, or `--provider openai`for direct OpenAI models. Add `--dry-run` to inspect settings. Change `--seed` for a
-different set of initializations.
+Use `--model PROVIDER_MODEL_ID` to select another model, or `--provider openai`
+for direct OpenAI models. Add `--dry-run` to inspect settings. Change `--seed`
+for a different set of initializations.
+
+### 3. Collect perturbation and recovery branches
 
 Generate perturbation and recovery branches from the collected checkpoints:
 
@@ -215,9 +232,8 @@ select parent trials and intervention points. Available perturbations are
 `object_moved_align`, `wrong_approach_side`, and `wrong_orientation`.
 
 Branches restore simulator/controller state and preserve parent history.
- 
 
-### Filter and prepare data
+### 4. Filter and prepare data
 
 ```bash
 .venv-eval/bin/python scripts/filter_trajectories.py \
@@ -230,20 +246,81 @@ or assemble a training dataset. It checks format, labels, images, duplicates,
 action limits, and available provenance. Visual review is still necessary.
 
 After assembling accepted records into `data/MY_DATASET/finetune_data.jsonl`,
-use `scripts/convert_to_native.py MY_DATASET` to convert them to Qwen3.5 native  
-format.  The default filter excludes known evaluation-only tasks from SFT data.
+use `scripts/convert_to_native.py MY_DATASET` to convert them to Qwen3.5 native
+format. The default filter excludes known evaluation-only tasks from SFT data.
 
-## Prompts and configuration
+<a id="training"></a>
+
+## 🧠 Train Guava models
+
+### 🛠️ Set up the training environment
+
+Training uses a fourth, isolated environment because ms-swift, DeepSpeed, vLLM,
+and FlashAttention require a different Torch stack:
+
+```bash
+uv venv .venv-train --python 3.11
+uv pip install --python .venv-train torch==2.11.0
+uv pip install --python .venv-train --no-build-isolation -r requirements-train.txt
+```
+
+### 📖 Supervised fine-tuning (SFT)
+
+Run full-parameter SFT on a local JSONL file or a dataset supported by ms-swift:
+
+```bash
+DATASET=/absolute/path/to/training.jsonl \
+MODEL_PATH=Qwen/Qwen3.5-4B \
+OUTPUT_DIR=runs/guava-sft \
+./scripts/run_sft_full.sh
+```
+
+| Default | Value |
+| --- | --- |
+| Visible GPUs | 8 |
+| Global batch size | 32 (`2 × 8 × gradient accumulation 2`) |
+| Image-token limit | 512 |
+| Distributed training | ZeRO-3 |
+| Checkpoint interval | Every 25 optimizer steps |
+
+Override these values through the environment variables documented at the top
+of [scripts/run_sft_full.sh](scripts/run_sft_full.sh).
+
+### 🎯 Reinforcement learning (GRPO)
+
+Online GRPO launches SAM3, multiple simulator workers, a vLLM rollout server,
+and a six-GPU full-parameter trainer. The released examples are **Shell Game**,
+**Set Table**, and **Red Objects in Basket**:
+
+```bash
+CHECKPOINT=/absolute/path/to/sft-checkpoint \
+NUM_GENERATIONS=8 MAX_STEPS=50 SAVE_STEPS=25 \
+./scripts/run_grpo_full.sh
+```
+
+Successful trajectories receive binary task-owned reward. Successes longer
+than 16 turns receive a `0.025` per-turn length penalty capped at `0.10`;
+failures remain at zero. Override these values with
+`GUAVA_LENGTH_PENALTY_FREE_TURNS`, `GUAVA_LENGTH_PENALTY_PER_TURN`, and
+`GUAVA_LENGTH_PENALTY_MAX`.
+
+<a id="configuration"></a>
+
+## ⚙️ Prompts and configuration
 
 - **Data collection:** [shared long prompt](guava/collection/system_prompt.txt).
-- **Fine-tune:** [short SFT prompt](configs/prompts/sft_v13b_short.txt).
+- **Fine-tuning:** [short SFT prompt](configs/prompts/sft_v13b_short.txt).
 - **Task scenes and settings:** [configs/](configs/).
 - **Configuration schema:** [guava/config.py](guava/config.py).
 
-Model-facing positions use metres in a table-aligned frame: tabletop `z=0`, with x/y aligned to the robot base. Tools perform the physical-frame conversion. PCA grasping is the default. Optional GraspGen requires a separate installation,  
-weights, and running service; see [https://github.com/NVlabs/GraspGen](https://github.com/NVlabs/GraspGen).
+Model-facing positions use metres in a table-aligned frame: tabletop `z=0`,
+with x/y aligned to the robot base. Tools perform the physical-frame conversion.
+PCA grasping is the default. Optional [GraspGen](https://github.com/NVlabs/GraspGen)
+requires a separate installation, weights, and a running service.
 
-## Record episode videos
+<a id="videos"></a>
+
+## 🎬 Record episode videos
 
 Add `--record-video` to evaluation or collection commands. Use `--video-fps N`
 to change the playback rate (default 20, supported range 1–60):
@@ -274,6 +351,28 @@ environment; ordinary Python exceptions finalize a partial clip, while a force-k
 process may leave an incomplete file. Existing videos are never overwritten.
 For YAML-driven collection, set top-level `record_video: true` and `video_fps: 20`.
 
-## Real World Deployment
+<a id="real-world"></a>
 
-This repository  **does not** include physical-robot operation, please adapt according to your own setup.
+## 🦾 Real-world deployment
+
+See the [project page](https://guava-harness.github.io/#results) for real-world
+demonstrations. Physical-robot operation code is not included in this repository;
+deployment requires an implementation adapted to your own robot setup.
+
+<a id="citation"></a>
+
+## 📚 Citation
+
+If you use Guava in your research, please cite:
+
+```bibtex
+@misc{liu2026guavaeffectiveuniversalharness,
+  title={Guava: An Effective and Universal Harness for Embodied Manipulation},
+  author={Haowen Liu and Xirui Li and Shaoxiong Yao and Peng Shi and Tianyi Zhou and Jia-Bin Huang and Furong Huang and Jiayuan Mao},
+  year={2026},
+  eprint={2606.18363},
+  archivePrefix={arXiv},
+  primaryClass={cs.RO},
+  url={https://arxiv.org/abs/2606.18363},
+}
+```
