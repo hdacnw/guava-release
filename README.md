@@ -1,19 +1,31 @@
 <div align="center">
   <img src="assets/images/red-guavas.png" alt="Guava logo" width="80">
   <h1>Guava</h1>
-  <p><strong>An Effective and Universal Harness for Embodied Manipulation</strong></p>
+  <p><strong>Distilling Frontier VLMs into a Compact Agent through a Robotic Manipulation Harness</strong></p>
   <p>
     <a href="https://guava-harness.github.io/">🌐 Project Page</a>
     &nbsp; · &nbsp;
     <a href="https://arxiv.org/abs/2606.18363">📄 Paper</a>
     &nbsp; · &nbsp;
-    <a href="https://huggingface.co/AIcell/guava-v13b-qwen3.5-4b">🤗 Guava Model</a>
+    <a href="https://huggingface.co/AIcell/guava-v13b-qwen3.5-4b">🤗 Guava-4B Model</a>
   </p>
 </div>
 
-Guava is a harness and model distillation framework for agentic manipulation.
-It brings together robot simulation, a **15-task benchmark**, and MuJoCo data
-collection for fine-tuning open-source models.
+**Guava** distills frontier vision–language models into a compact robot agent
+through a shared manipulation harness. Using **GPT-5.4** as the teacher, we
+collect **just over 2,000 simulation trajectories** and fine-tune
+**Qwen3.5-4B** to obtain **Guava-4B**. The teacher and student use the same
+observation, tool, and execution-feedback interface.
+
+Guava-4B approaches its teacher's performance with **87.1% simulation success**
+and **90.0% real-world success**, without real-world fine-tuning. On a single
+RTX 5090, it reduces mean model-call latency by **7.10×** and generated tokens
+per episode by **66.7%** relative to the GPT-5.4 API in the reported evaluation.
+See [paper results](#results) for protocols and comparisons.
+
+This repository provides the simulation harness, a **15-task benchmark**,
+trajectory collection with perturbation and recovery branches, and SFT/GRPO
+training tools.
 
 | | What you can do |
 | --- | --- |
@@ -21,11 +33,11 @@ collection for fine-tuning open-source models.
 | 🧪 **Collect** | Generate trajectories, introduce perturbations, and collect recovery branches. |
 | 🧠 **Train** | Distill tool-use behavior with supervised fine-tuning and improve policies with GRPO. |
 
-[![Guava overview: perception, reasoning, and action for embodied manipulation.](assets/images/teaser.png)](assets/videos/guava_overview.mp4)
+[![Guava pipeline: a shared manipulation harness connects frontier-teacher data generation in simulation with compact-agent training and deployment.](assets/images/guava_overview_arxiv.png)](assets/videos/guava_v3.mp4)
 
-**[▶️ Watch the overview](assets/videos/guava_overview.mp4)** · **[🌐 Explore the project page](https://guava-harness.github.io/)**
+**[▶️ Watch the overview](assets/videos/guava_v3.mp4)** · **[🌐 Explore the project page](https://guava-harness.github.io/)**
 
-**Jump to:** [🎥 Demos](#demos) · [📦 Installation](#installation) · [🚀 Quick start](#quick-start) · [📊 Benchmark](#benchmark) · [🧪 Data collection](#data-collection) · [🧠 Training](#training) · [⚙️ Configuration](#configuration) · [🎬 Videos](#videos) · [🦾 Real world](#real-world) · [📚 Citation](#citation)
+**Jump to:** [🎥 Demos](#demos) · [🦾 Harness](#harness) · [📈 Results](#results) · [📦 Installation](#installation) · [🚀 Quick start](#quick-start) · [📊 Benchmark](#benchmark) · [🧪 Data collection](#data-collection) · [🧠 Training](#training) · [⚙️ Configuration](#configuration) · [🎬 Videos](#videos) · [🦾 Real world](#real-world) · [📚 Citation](#citation)
 
 <a id="demos"></a>
 
@@ -39,6 +51,89 @@ collection for fine-tuning open-source models.
 Select a preview to open the full MP4 video. The previews retain the source clips'
 playback speed at a reduced resolution and frame rate.
 See [media sources](assets/README.md) for the original project-page assets.
+
+<a id="harness"></a>
+
+## 🦾 A shared manipulation harness
+
+The harness exposes the same interface during teacher data collection and
+student deployment. Each turn combines three elements:
+
+- **Single-action replanning:** observe, reason, execute one action, and use the
+  returned feedback to choose the next action.
+- **Semantic action tools:** object-referenced operations such as grasp and
+  align handle robot control through reusable manipulation skills.
+- **Multimodal feedback:** RGB images, numerical gripper state, and tool-response
+  text describe the scene and execution outcomes.
+
+<p align="center">
+  <img src="assets/images/guava_harness_turn_arxiv.png" alt="One harness turn: observation and interaction history inform reasoning and a semantic tool call; execution returns feedback for the next turn." width="440">
+</p>
+
+Teacher trajectories supervise the student's interleaved reasoning and tool
+calls. Training data includes both ordinary task execution and successful
+recoveries from injected execution deviations, such as missed grasps and
+dropped objects.
+
+<a id="results"></a>
+
+## 📈 Results from the paper
+
+The following results are reported in the revised paper and on the
+[project page](https://guava-harness.github.io/#results).
+
+### Simulation and real-world transfer
+
+| Evaluation | GPT-5.4 | Qwen3.5-4B | Guava-4B |
+| --- | ---: | ---: | ---: |
+| Simulation success (%) | 90.4 | 22.2 | **87.1** |
+| Real-world success (%) | 93.3 | 28.9 | **90.0** |
+
+Simulation uses **15 tasks with 30 trials per task**; real-world evaluation
+uses **9 tasks with 10 trials per task**, without real-world fine-tuning.
+All models use the full harness. Bold values highlight Guava-4B.
+
+<details>
+<summary>Simulation generalization and the effect of perturbation data</summary>
+
+| Task group | GPT-5.4 | Qwen3.5-4B | Guava-4B | Guava-4B without perturbations |
+| --- | ---: | ---: | ---: | ---: |
+| Seen (7 tasks) | 86.7 | 23.8 | 82.9 | 81.9 |
+| Unseen (8 tasks) | 93.8 | 20.8 | 90.8 | 77.1 |
+| Overall | 90.4 | 22.2 | 87.1 | 79.3 |
+
+Values are success percentages. Unseen tasks include new objects, instructions,
+and longer action sequences. Adding perturbation and recovery trajectories
+improves Guava-4B's unseen-task success from **77.1% to 90.8%**.
+
+</details>
+
+### Generalization to LIBERO-PRO
+
+Guava-4B is also evaluated on LIBERO-PRO without benchmark-specific fine-tuning.
+Success rates below are on a **0–1 scale**, averaged across the object, goal,
+and spatial suites.
+
+| Perturbation | GPT-5.4 | Qwen3.5-4B | Guava-4B |
+| --- | ---: | ---: | ---: |
+| Initial position | 0.45 | 0.06 | **0.41** |
+| Task instruction | 0.44 | 0.03 | **0.41** |
+
+These are paper results; the [benchmark commands below](#benchmark) run this
+repository's 15-task simulation benchmark.
+
+### Efficient local inference
+
+| Metric | GPT-5.4 API | Guava-4B on one RTX 5090 |
+| --- | ---: | ---: |
+| Mean model-call latency (s) | 4.168 | **0.587** |
+| Model-request time per episode (s) | 42.10 | **5.64** |
+| Generated tokens per episode | 2,389 | **795** |
+
+Results are means over **30 episodes on three tasks per model**; model-call
+latency is averaged over requests. The **7.10× reduction in model-call latency**
+and **66.7% reduction in generated tokens** measure model inference, not
+end-to-end robot execution time.
 
 <a id="installation"></a>
 
@@ -204,7 +299,13 @@ and episode results.
 
 ## 🧪 Data collection
 
-![Guava data engine: simulation scenes and a frontier VLM produce reasoning and tool-call trajectories.](assets/images/data_engine.png)
+![Base trajectories and recovery branches: a shared execution history branches into normal execution and an injected grasp slip followed by recovery.](assets/images/guava_trajectories_arxiv.png)
+
+The paper's data pipeline uses GPT-5.4 in randomized MuJoCo scenes, combining
+base trajectories with successful recovery branches. Simulator outcome labels
+are checked automatically and reviewed visually; supported annotation errors
+are corrected and unresolved episodes are excluded. The commands below expose
+the collection and preparation stages.
 
 ### 1. Start perception
 
@@ -322,8 +423,16 @@ failures remain at zero. Override these values with
 <details>
 <summary>📈 SFT and RL results from the paper</summary>
 
+Additional GRPO post-training improves success on two selected long-horizon
+tasks, evaluated with **30 trials per task**:
+
+| Task | SFT success (%) | SFT + GRPO success (%) |
+| --- | ---: | ---: |
+| Shell game | 63.3 | **90.0** |
+| Place all red objects in a basket | 80.0 | **86.7** |
+
 <p align="center">
-  <img src="assets/images/sft_vs_rl.png" alt="SFT and RL success rates on long-horizon manipulation tasks." width="640">
+  <img src="assets/images/guava_rl_arxiv.png" alt="Success after GRPO: shell game improves from 63.3% to 90.0%; placing all red objects in a basket improves from 80.0% to 86.7%." width="640">
 </p>
 
 </details>
@@ -383,7 +492,13 @@ See the [project page](https://guava-harness.github.io/#results) for real-world
 demonstrations. Physical-robot operation code is not included in this repository;
 deployment requires an implementation adapted to your own robot setup.
 
-![Real-world evaluation from the paper: success rates on in-distribution and out-of-distribution tasks.](assets/images/real_world_comparison.png)
+![Zero-shot real-world evaluation on nine tasks: GPT-5.4 achieves 93.3% overall success, Qwen3.5-4B 28.9%, and Guava-4B 90.0%.](assets/images/guava_realworld_arxiv.png)
+
+The qualitative demonstrations include retrying a grasp after an object moves
+and recovering from a controller abort after contact with a box rim. In the
+latter example, Guava moves the gripper sideways to clear the obstruction and
+then resumes placement; this controller-specific interruption was not included
+in the simulation training data.
 
 <a id="citation"></a>
 
@@ -392,8 +507,8 @@ deployment requires an implementation adapted to your own robot setup.
 If you use Guava in your research, please cite:
 
 ```bibtex
-@misc{liu2026guavaeffectiveuniversalharness,
-  title={Guava: An Effective and Universal Harness for Embodied Manipulation},
+@misc{liu2026guava,
+  title={Guava: Distilling Frontier VLMs into a Compact Agent through a Robotic Manipulation Harness},
   author={Haowen Liu and Xirui Li and Shaoxiong Yao and Peng Shi and Tianyi Zhou and Jia-Bin Huang and Furong Huang and Jiayuan Mao},
   year={2026},
   eprint={2606.18363},
